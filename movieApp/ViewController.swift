@@ -11,18 +11,13 @@ import AVFoundation
 import Photos
 
 class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate {
-    func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
-    }
-    
     let fileOutput = AVCaptureMovieFileOutput()
     var recordButton: UIButton!
     var isRecording = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
-        // 動画収録の画面
-        setUpPreview()
+        setUpPreview()// 動画収録の画面
     }
     
     func setUpPreview(){
@@ -57,12 +52,13 @@ class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate {
             
             captureSession.startRunning()
             
-            setUpButton() // 収録開始ボタンを配置する
+            setUpButton() // 収録開始ボタン配置メソッドを呼び出す
         } catch{
             // エラー処理
         }
     }
     
+    // 録画ボタン描画
     func setUpButton(){
         recordButton = UIButton(frame: CGRect(x: 0,y: 0,width: 120,height: 50)) // 配置する場所の指定
         recordButton.backgroundColor = UIColor.gray
@@ -76,7 +72,7 @@ class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate {
     }
     
     @objc func onClickRecordButton(sender: UIButton) { // 収録開始ボタンタップ時に呼び出されるメソッド
-        if !isRecording {
+        if !isRecording { // 録画しているかどうかの確認で、もし録画していない場合
                // 録画開始
                let paths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
                let documentsDirectory = paths[0] as String
@@ -85,19 +81,30 @@ class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate {
                fileOutput.startRecording(to: fileURL as URL, recordingDelegate: self)
 
                isRecording = true
-               changeButtonColor(target: recordButton, color: UIColor.red)
-               recordButton.setTitle("録画中", for: .normal)
+               changeButtonColor(target: recordButton, color: UIColor.red) //ボタンの色を赤に変更する
+               recordButton.setTitle("録画中", for: .normal) // ボタン名を「録画中」に変更する
            } else {
                // 録画終了
                fileOutput.stopRecording()
 
                isRecording = false
                changeButtonColor(target: recordButton, color: UIColor.gray)
-               recordButton.setTitle("録画開始", for: .normal)
+               recordButton.setTitle("録画開始", for: .normal) // ボタン名を「録画開始」に変更する
            }
     }
     
-    func changeButtonColor(target: UIButton, color: UIColor) { // ボタンが押される度、プロパティを変更する為、このメソッドを用意している
-        target.backgroundColor = color
+    func changeButtonColor(target: UIButton, color: UIColor) {
+        target.backgroundColor = color // ボタンが押される度、プロパティを変更する為、このメソッドを用意している
+    }
+
+    func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
+        // ライブラリへ保存
+        PHPhotoLibrary.shared().performChanges({
+            PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: outputFileURL)
+        }) { completed, error in
+            if completed {
+                print("Video is saved!")
+            }
+        }
     }
 }
